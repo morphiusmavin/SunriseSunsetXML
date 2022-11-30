@@ -14,21 +14,27 @@ namespace SunriseSunset
     public partial class MainForm : Form
 	{
         private List<String> temp;
+        private List<String> temp2;
         private List<TdataClass> mycdata = null;
         private List<Moon_lines> moon_lines = null;
+        private Moon_lines moon = null;
         int month;
+        int noRecs = 0;
         public MainForm()
 		{
 			InitializeComponent();
             btnAdd2List.Enabled = false;
             btnOpenCSV.Enabled = false;
+            mycdata = new List<TdataClass>();
+            moon_lines = new List<Moon_lines>();
         }
+        // open csv file and convert to xml
         private void btnOpenCSV_Click(object sender, EventArgs e)
 		{
             string tfilename;
             int k = 0;
             // can't have the 1st line blank
-            MessageBox.Show("make sure this csv file is in the sunset/sunrise format", "WARNING");
+            //MessageBox.Show("make sure this csv file is in the sunset/sunrise format", "WARNING");
             tfilename = ChooseCSVFileName();
             if (tfilename == "")
                 return;
@@ -75,7 +81,7 @@ namespace SunriseSunset
             //new XElement("MilMiles", fields[12])
             )
             );
-            tfilename = @"C:\Users\Daniel\dev\tdata" + month.ToString() + ".xml";
+            tfilename = @"C:\Users\Daniel\SunriseSunsetData\tdata" + month.ToString() + ".xml";
             File.WriteAllText(tfilename, xml + top.ToString());
             //MessageBox.Show("C:\\Users\\Daniel\\dev\\tdata.xml (used by Win Client)");
         }
@@ -85,21 +91,17 @@ namespace SunriseSunset
             btnOpenCSV.Enabled = true;
             month = lbMonth.SelectedIndex + 1;
         }
+        // open xml file and add to mycdata list
         private void btnAdd2List_Click(object sender, EventArgs e)
         {
             XmlReader xmlfile = null;
             TdataClass item;
             string tfilename;
-            int day = 1;
+          
             tfilename = ChooseXMLFileName();
             if (tfilename == "")
                 return;
-
-            if (!File.Exists(tfilename))
-            {
-                MessageBox.Show("can't find file: " + tfilename);
-                return;
-            }
+            
             DataSet ds = new DataSet();
             var filePath = tfilename;
             xmlfile = XmlReader.Create(filePath, new XmlReaderSettings());
@@ -108,18 +110,19 @@ namespace SunriseSunset
             foreach (DataRow dr in ds.Tables[0].Rows)
             {
                 item = new TdataClass();
-                item.month = month;
                 item.day = Convert.ToInt16(dr.ItemArray[0]);
-                item.sunrise = dr.ItemArray[1].ToString();
-                item.sunset = dr.ItemArray[2].ToString();
-                item.AstTwiStart = dr.ItemArray[5].ToString();
-                item.AstTwiEnd = dr.ItemArray[6].ToString();
-                item.NautTwiStart = dr.ItemArray[7].ToString();
-                item.NautTwiEnd = dr.ItemArray[8].ToString();
-                item.CivilTwiStart = dr.ItemArray[9].ToString();
-                item.CivilTwiEnd = dr.ItemArray[10].ToString();
+                item.month = Convert.ToInt16(dr.ItemArray[1]);
+                item.sunrise = dr.ItemArray[2].ToString();
+                item.sunset = dr.ItemArray[3].ToString();
+                item.AstTwiStart = dr.ItemArray[4].ToString();
+                item.AstTwiEnd = dr.ItemArray[5].ToString();
+                item.NautTwiStart = dr.ItemArray[6].ToString();
+                item.NautTwiEnd = dr.ItemArray[7].ToString();
+                item.CivilTwiStart = dr.ItemArray[8].ToString();
+                item.CivilTwiEnd = dr.ItemArray[9].ToString();
                 mycdata.Add(item);
             }
+            /*
             if (moon_lines.Count < 20)
             {
                 MessageBox.Show("moon data not loaded");
@@ -127,19 +130,24 @@ namespace SunriseSunset
             }
             foreach (Moon_lines ml in moon_lines)
             {
-                string temp = ml.line;
+                //string temp = ml.line;
             }
+            */
             dataGridView1.DataSource = ds.Tables[0];
+            noRecs = mycdata.Count();
+            tbNoRecs.Text = noRecs.ToString();
         }
         private void btnHelp_Click(object sender, EventArgs e)
 		{
             string text = System.IO.File.ReadAllText(@"C:\Users\Daniel\SunriseSunsetData\help.txt");
             MessageBox.Show(text);
 		}
+        // open moon file and add to moon_lines list
         private void btnMoon_Click(object sender, EventArgs e)
         {
             string tfilename;
-            int k = 0;
+            temp2 = new List<String>();
+          
             tfilename = ChooseMoonFileName();
             if (tfilename == "")
                 return;
@@ -149,36 +157,153 @@ namespace SunriseSunset
                 string[] lines = File.ReadAllLines(tfilename);
                 //AddMsg(lines.Length.ToString());
                 int no_days = 0;
-                if (moon_lines.Count == 0)
-                    moon_lines = new List<Moon_lines>();
-                else moon_lines.Clear();
-                int j = 0;
+               
+               
                 int i = 0;
-                Moon_lines temp2;
+                temp = new List<string>();
                 foreach (string line in lines)
                 {
                     if (line.Length > 0)
                     {
                         char first = line[0];
-                        if (first != ' ' && first != '\t')
+                        if (first != ' ' && first != '\t' && first != 160)
                         {
-                            if (first > 47 && first < 58)
-                                no_days = int.Parse(line);
-                            else
-                            {
-                                temp2 = new Moon_lines();
-                                temp2.date = no_days;
-                                temp2.line = line;
-                                temp2.index = i;
-                                //AddMsg(temp2.date.ToString() + " " + temp2.line + " " + temp2.index.ToString());
-                                moon_lines.Add(temp2);
-                                temp2 = null;
-                                i++;
-                            }
+                            temp.Add(line);
                         }
                     }
                 }
+                foreach(string line in temp)
+				{
+                    if(!line.Contains("Sunrise:") && !line.Contains("Sunset:"))
+					{
+                        temp2.Add(line);
+					}
+				}
+                string rise = "";
+                string set = "";
+                int day = 0;
+                foreach (string line in temp2)
+				{
+                
+                    if(line[0] > 47 && line[0] < 58)
+					{
+                        day = int.Parse(line);
+					}
+                    if(line.Contains("Moonrise:"))
+					{
+                        rise = line;
+					}
+                    if(line.Contains("Moonset:"))
+					{
+                        set = line;
+					}
+                    if(rise != string.Empty && set != string.Empty)
+					{
+                        moon = new Moon_lines();
+                        moon.day = day;
+                        moon.month = month;
+                        moon.rise = rise;
+                        moon.set = set;
+                        moon_lines.Add(moon);
+                        moon = null;
+                        rise = set = "";
+					}
+				}
             }
+        }
+		private void btnShowCdata_Click(object sender, EventArgs e)
+		{
+            DataTable dt = GetDataTable();
+            foreach (TdataClass td in mycdata)
+            {
+                dt.Rows.Add(td.month.ToString(), td.day.ToString(), td.sunrise, td.sunset, td.moonrise, td.moonset, td.AstTwiStart, td.AstTwiEnd, td.NautTwiStart, td.NautTwiEnd, td.CivilTwiStart, td.CivilTwiEnd);
+            }
+            dataGridView1.DataSource = dt;
+        }
+		private void btnReset_Click(object sender, EventArgs e)
+		{
+            noRecs = 0;
+            mycdata.Clear();
+            moon_lines.Clear();
+            dataGridView1.Rows.Clear();
+		}
+        // insert all of moon_lines records to same day/month as in mycdata list (merge)
+		private void btnAddMoon_Click(object sender, EventArgs e)
+		{
+            foreach (TdataClass td in mycdata)
+            {
+                foreach (Moon_lines ml in moon_lines)
+                {
+                    if (ml.day == td.day && ml.month == td.month)
+                    {
+                        td.moonrise = ml.rise;
+                        td.moonset = ml.set;
+                    }
+                }
+            }
+		}
+        // take the mycdata array and write to XML file - this is the last step
+        private void btnCreateFinal_Click(object sender, EventArgs e)
+        {
+            string tfilename;
+            tfilename = CreateXMLFileName();
+            if (tfilename == "")
+                return;
+            if (File.Exists(tfilename))
+            {
+                MessageBox.Show(tfilename + " already exists");
+                return;
+            }
+            int count = mycdata.Count;
+            String[] file = new string[count];
+            int i = 0;
+            foreach (TdataClass td in mycdata)
+            {
+                //if (td.port > -1)
+                file[i] = td.day.ToString() + "," +
+                    td.month.ToString() + "," +
+                    td.AstTwiStart + "," +
+                    td.NautTwiStart + "," +
+                    td.CivilTwiStart + "," +
+                    td.sunrise + "," +
+                    td.sunset + "," +
+                    td.moonrise + "," +
+                    td.moonset + "," +
+                    td.AstTwiEnd + "," +
+                    td.NautTwiEnd + "," +
+                    td.CivilTwiEnd;
+                i++;
+            }
+            /*
+            string line = "0,0,0,0,0,0,0,temp";
+            string line2;
+            int index = count;
+            for (int j = 0; j < 20 - count; j++)
+            {
+                line2 = index.ToString() + ',' + "-1" + ',' + line + index.ToString();
+                file[index] = line2;
+                index++;
+            }
+            */
+            String xml = "";
+            XElement top = new XElement("Table",
+            from items in file
+            let fields = items.Split(',')
+            select new XElement("C_DATA",
+            new XElement("index", fields[0]),
+            new XElement("port", fields[1]),
+            new XElement("state", fields[2]),
+            new XElement("on_hour", fields[3]),
+            new XElement("on_minute", fields[4]),
+            new XElement("on_second", fields[5]),
+            new XElement("off_hour", fields[6]),
+            new XElement("off_minute", fields[7]),
+            new XElement("off_second", fields[8]),
+            new XElement("label", fields[9])
+            )
+            );
+            File.WriteAllText(tfilename, xml + top.ToString());
+            MessageBox.Show("created: " + tfilename);
         }
         private DataTable GetDataTable()
         {
@@ -211,6 +336,22 @@ namespace SunriseSunset
             dt.Columns.Add(dc10);
             dt.Columns.Add(dc11);
             return dt;
+        }
+        private string CreateXMLFileName()
+        {
+            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+            saveFileDialog1.Filter = "XML file|*.XML|xml file|*.xml";
+            saveFileDialog1.Title = "Create an XML file";
+            saveFileDialog1.InitialDirectory = @"C:\Users\Daniel\SunriseSunsetData";
+            saveFileDialog1.ShowDialog();
+
+            // If the file name is not an empty string open it for saving.
+            if (saveFileDialog1.FileName != "")
+            {
+                tbFileName.Text = saveFileDialog1.FileName;
+                return saveFileDialog1.FileName;
+            }
+            else return "";
         }
         private string ChooseCSVFileName()
         {
@@ -290,16 +431,6 @@ namespace SunriseSunset
                 return openFileDialog2.FileName;
             }
             else return "";
-
-        }
-		private void btnShowCdata_Click(object sender, EventArgs e)
-		{
-            DataTable dt = GetDataTable();
-            foreach (TdataClass td in mycdata)
-            {
-                dt.Rows.Add(td.month.ToString(), td.day.ToString(), td.sunrise, td.sunset, td.moonrise, td.moonset, td.AstTwiStart, td.AstTwiEnd, td.NautTwiStart, td.NautTwiEnd, td.CivilTwiStart, td.CivilTwiEnd);
-            }
-            dataGridView1.DataSource = dt;
         }
 	}
 }

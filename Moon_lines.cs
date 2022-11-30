@@ -8,8 +8,9 @@ namespace SunriseSunset
 {
 	class Moon_lines
 	{
-		public int index { get; set; }
-		public int date { get; set; }
-		public string line { get; set; }
+		public int month { get; set; }
+		public int day { get; set; }
+		public string rise { get; set; }
+		public string set { get; set; }
 	}
 }
