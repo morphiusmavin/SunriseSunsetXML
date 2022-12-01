@@ -182,6 +182,7 @@ namespace SunriseSunset
                 string rise = "";
                 string set = "";
                 int day = 0;
+                int index;
                 foreach (string line in temp2)
 				{
                 
@@ -191,11 +192,16 @@ namespace SunriseSunset
 					}
                     if(line.Contains("Moonrise:"))
 					{
+
                         rise = line;
-					}
+                        index = rise.IndexOf(':');
+                        rise = rise.Remove(0, index+2);
+                    }
                     if(line.Contains("Moonset:"))
 					{
                         set = line;
+                        index = set.IndexOf(":");
+                        set = set.Remove(0, index+2);
 					}
                     if(rise != string.Empty && set != string.Empty)
 					{
@@ -289,17 +295,19 @@ namespace SunriseSunset
             XElement top = new XElement("Table",
             from items in file
             let fields = items.Split(',')
-            select new XElement("C_DATA",
-            new XElement("index", fields[0]),
-            new XElement("port", fields[1]),
-            new XElement("state", fields[2]),
-            new XElement("on_hour", fields[3]),
-            new XElement("on_minute", fields[4]),
-            new XElement("on_second", fields[5]),
-            new XElement("off_hour", fields[6]),
-            new XElement("off_minute", fields[7]),
-            new XElement("off_second", fields[8]),
-            new XElement("label", fields[9])
+            select new XElement("T_DATA",
+            new XElement("day", fields[0]),
+            new XElement("month", fields[1]),
+            new XElement("AstTwiStart", fields[2]),
+            new XElement("NautTwiStart", fields[3]),
+            new XElement("CivilTwiStart", fields[4]),
+            new XElement("sunrise", fields[5]),
+            new XElement("sunset", fields[6]),
+            new XElement("moonrise", fields[7]),
+            new XElement("moonset", fields[8]),
+            new XElement("AstTwiEnd", fields[9]),
+            new XElement("NautTwiEnd", fields[10]),
+            new XElement("CivilTwiEnd", fields[11])
             )
             );
             File.WriteAllText(tfilename, xml + top.ToString());
@@ -390,7 +398,7 @@ namespace SunriseSunset
                 CheckPathExists = true,
 
                 DefaultExt = "xml",
-                Filter = "xml files (*.xml)|*.XML",
+                Filter = "XML file|*.XML|xml file|*.xml",
                 FilterIndex = 2,
                 RestoreDirectory = true,
 
